@@ -32,6 +32,21 @@ Notes:
 - `--model` filters by manager model config name prefix, not provider model path.
 - `--search` fuzzy-matches display name and model name.
 
+## Styles
+
+| Task | Command |
+|---|---|
+| List styles | `vidmuse style list` |
+| List official and personal styles | `vidmuse style list --scope all` |
+| List official styles | `vidmuse style list --scope official` |
+| List personal styles | `vidmuse style list --scope user` |
+| List style summaries | `vidmuse style list --scope official --limit 12 --view summary -o json` |
+| Get style details | `vidmuse style get <styleId> --view full -o json` |
+| Project style fields | `vidmuse style list --scope official --fields id,name,description,tags,imageUrl -o json` |
+| Filter styles by tag | `vidmuse style list --tag "Dreamcore Style"` |
+| Require multiple tags | `vidmuse style list --tag "Dreamcore Style" --tag "Lo-fi/VHS Aesthetic"` |
+| Paginate styles | `vidmuse style list --limit 20 --offset 0` |
+
 ## Assets
 
 | Task | Command |
