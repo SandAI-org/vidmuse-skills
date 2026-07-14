@@ -10,7 +10,7 @@ The main skill is published at:
 skills/vidmuse/SKILL.md
 ```
 
-Use it when an AI agent needs to create or inspect VidMuse projects, manage threads and messages, inspect assets and styles, discover models, or work with long-term memory.
+Use it when an AI agent needs to create or inspect VidMuse projects, manage threads and messages, inspect assets, styles, and voices, discover models, or work with long-term memory.
 
 ## Install the VidMuse command runtime
 

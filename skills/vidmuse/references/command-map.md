@@ -47,6 +47,25 @@ Notes:
 | Require multiple tags | `vidmuse style list --tag "Dreamcore Style" --tag "Lo-fi/VHS Aesthetic"` |
 | Paginate styles | `vidmuse style list --limit 20 --offset 0` |
 
+## Voices
+
+| Task | Command |
+|---|---|
+| List voices | `vidmuse voice list` |
+| List voice summaries | `vidmuse voice list --limit 20 --view summary -o json` |
+| Filter by language and gender | `vidmuse voice list --language en --gender female -o json` |
+| Filter by emotion text | `vidmuse voice list --emotion "calm" -o json` |
+| Search voice descriptions | `vidmuse voice search -q "premium brand ad" -o json` |
+| Require a model mapping | `vidmuse voice list --model minimax/speech-2.6-hd -o json` |
+| Get voice details | `vidmuse voice get F-EN-001 --view full -o json` |
+| Project voice fields | `vidmuse voice list --fields voiceId,language,gender,summary,modelIds -o json` |
+| Paginate voices | `vidmuse voice list --limit 20 --offset 0` |
+
+Notes:
+- `voiceId` is the canonical library ID, for example `F-EN-001`.
+- For TTS calls that need a provider-specific ID, use `modelIds[<model-name>]`, for example `modelIds["minimax/speech-2.6-hd"]`.
+- For clone-capable voice models, use `sampleAudioUrl` as the reference audio when the model contract accepts reference audio.
+
 ## Assets
 
 | Task | Command |

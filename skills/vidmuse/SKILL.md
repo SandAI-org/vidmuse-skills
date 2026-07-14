@@ -1,11 +1,11 @@
 ---
 name: vidmuse
-description: Use when an AI agent needs to work with VidMuse projects, account state, subscription credits, video/audio/image/text/tool models, generated or uploaded assets, style library entries, generation parameters, threads, messages, or long-term memory. Installs and uses the `vidmuse` command runtime when needed.
+description: Use when an AI agent needs to work with VidMuse projects, account state, subscription credits, video/audio/image/text/tool models, generated or uploaded assets, style library entries, voice library entries, generation parameters, threads, messages, or long-term memory. Installs and uses the `vidmuse` command runtime when needed.
 ---
 
 # VidMuse Skill
 
-Use this skill when a task asks for VidMuse account state, subscription plan, model discovery, assets, style library entries, generation params, thread/message operations, or long-term memory operations. Treat the `vidmuse` command as the runtime for accessing VidMuse capabilities; keep user-facing answers focused on the VidMuse task unless the user asks about the command itself.
+Use this skill when a task asks for VidMuse account state, subscription plan, model discovery, assets, style library entries, voice library entries, generation params, thread/message operations, or long-term memory operations. Treat the `vidmuse` command as the runtime for accessing VidMuse capabilities; keep user-facing answers focused on the VidMuse task unless the user asks about the command itself.
 
 ## Workflow
 
