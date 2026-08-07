@@ -61,9 +61,36 @@ Use this skill when a task asks for VidMuse account state, subscription plan, mo
 
 3. For command routing, read `references/command-map.md`.
 
+## Local media runtime
+
+The released CLI binary does not require Go. Account, model, asset, style, voice, thread, message, and memory commands require only the `vidmuse` binary and network access. Check extra tools before using local preview or rendering commands:
+
+```bash
+node --version
+ffmpeg -version
+```
+
+| Command | Required runtime |
+| --- | --- |
+| `vidmuse serve` | FFmpeg only when video thumbnails are requested |
+| `vidmuse render` | Node.js 22+ and FFmpeg |
+
+When Node.js or FFmpeg is missing, do not install system packages without the user's approval. Tell the user which prerequisite is missing and offer the appropriate command:
+
+```bash
+# macOS (Homebrew)
+brew install node ffmpeg
+
+# Debian or Ubuntu
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs ffmpeg
+```
+
+The render command uses `npx --yes hyperframes@0.7.26` when no `HYPERFRAMES_BIN` is supplied. The first such render needs npm network access. Use `NODE_BIN`, `FFMPEG_BIN`, and `HYPERFRAMES_BIN` for nonstandard executable paths.
+
 ## Output Contract
 
-Default output mode is `text`. Add `--output json` only when structured parsing is needed.
+Default output mode is `text`. Add `--output json` only when structured parsing is needed. Do not add it to `vidmuse render`: its `-o`/`--output` flag specifies the rendered video file path.
 
 Use `text` for compact plain-language responses. Nested lists and maps are rendered as indented blocks.
 

@@ -2,6 +2,27 @@
 
 Assume the `vidmuse` command runtime is available on `PATH` after following `SKILL.md`.
 
+## Local Preview
+
+| Task | Command |
+|---|---|
+| Preview the default `dsl.json` | `vidmuse serve` |
+| Preview a specific DSL file | `vidmuse serve ./project.dsl.json` |
+| Select a local preview port | `vidmuse serve ./project.dsl.json --port 5175` |
+| Explicitly listen on another interface | `vidmuse serve ./project.dsl.json --host 0.0.0.0` |
+| Prevent editing the DSL from the preview | `vidmuse serve ./project.dsl.json --read-only` |
+
+The server listens on `127.0.0.1` by default. A non-loopback `--host` is an explicit trust decision: the local preview has no mandatory authentication and intentionally permits project-local paths and HTTP(S) media targets. Video thumbnails use `ffmpeg` from `PATH`; set `FFMPEG_BIN` for a nonstandard location. The released CLI binary does not require Go at runtime.
+
+## Local Render
+
+| Task | Command |
+|---|---|
+| Render the complete video | `vidmuse render ./project.dsl.json` |
+| Render a transparent overlay | `vidmuse render ./project.dsl.json --mode overlay` |
+
+`vidmuse render` requires Node.js 22+ and FFmpeg. Check `node --version` and `ffmpeg -version` first. Without `HYPERFRAMES_BIN`, its first HyperFrames render also needs npm network access to download the pinned renderer.
+
 ## Account
 
 | Task | Command |
@@ -23,14 +44,33 @@ Assume the `vidmuse` command runtime is available on `PATH` after following `SKI
 | List audio models | `vidmuse model list --audio` |
 | List image models | `vidmuse model list --image` |
 | List text models | `vidmuse model list --text` |
-| List tool models | `vidmuse model list --tool` |
 | Filter by model name prefix | `vidmuse model list --model kling` |
 | Search display name or model name | `vidmuse model list --search pro` |
+| Run image model | `vidmuse model run --param '{"model_name":"<modelName>","prompt":"A sunrise"}'` |
+| Run video with reference images | `vidmuse model run --param '{"model_name":"<modelName>","prompt":"Camera pushes in","elements":[{"reference_image_urls":["https://cdn.example.org/reference.png"]}]}'` |
+| Run video with a frontal image | `vidmuse model run --param '{"model_name":"<modelName>","prompt":"Animate the character","elements":[{"frontal_image_url":"https://cdn.example.org/character.png"}]}'` |
+| Run video with a reference video | `vidmuse model run --param '{"model_name":"<modelName>","prompt":"Follow this motion","elements":[{"video_url":"https://cdn.example.org/reference.mp4"}]}'` |
+| Run video with audio | `vidmuse model run --param '{"model_name":"<modelName>","prompt":"Avatar speaking","audios":[{"url":"https://cdn.example.org/voice.wav"}]}'` |
+| Run audio model | `vidmuse model run --param '{"model_name":"<modelName>","prompt":"Warm cinematic music"}'` |
+| Run subtitle alignment | `vidmuse model run --param '{"model_name":"doubao_speech/audio_text_alignment","prompt":"subtitle transcript","files":["/users/42/audio.wav"]}'` |
+| Submit a media model asynchronously | `vidmuse model run --async --param '{"model_name":"<modelName>","prompt":"A sunrise"}'` |
+| Query an asynchronous task result | `vidmuse model result <taskId>` |
+| Analyze music | `vidmuse tool run analyze_music --param '{"audio_path":"./music.mp3"}'` |
 
 Notes:
-- Type flags are mutually exclusive.
-- `--model` filters by manager model config name prefix, not provider model path.
-- `--search` fuzzy-matches display name and model name.
+- Type filter flags are mutually exclusive.
+- `--model` filters by the Manager model configuration name prefix, not by the provider model path.
+- `--search` performs fuzzy matching against display names and model names.
+- `model run` requires `--param`; the value must be a JSON object containing `model_name`. Image, audio, and video models also accept `--async`.
+- `--param` is the complete Aion Manager request. Use canonical snake_case fields and model-specific nested structures directly.
+- Public media URLs pass through unchanged. Local paths in `files`, image URL fields, audio URL fields, and video element fields are uploaded before the request. ATA `files[]` entries use the returned `savedPath`; other media inputs use the returned `downloadUrl`.
+- The CLI does not infer or remap `prompt`, `elements`, or `generation_type`.
+- cli-server resolves the enabled model configuration from `model_name` and infers whether the request is video, image, audio, or ATA text.
+- Each video `elements` entry must follow the Aion schema and select its own supported reference mode, such as `reference_image_urls`, `frontal_image_url`, or `video_url`.
+- Aion ATA returns raw JSON and does not generate or register SRT text assets.
+- By default, `model run` waits for cli-server to receive the terminal Aion result. With `--async`, supported media models print only the task ID; `model result <taskId>` performs one task query and prints the result after the task succeeds. It does not wait in cli-server, so retry it later while the task is still in progress. Text models do not support `--async`.
+- The CLI does not expose generic tool models or general-purpose text models. `analyze_music` is the only dedicated tool command and does not require a thread.
+- `analyze_music` accepts a local audio/video path or public HTTP(S) URL. Public media is downloaded to a temporary CLI file, uploaded through the model input flow, and forwarded to VidMCP as the returned `savedPath`.
 
 ## Styles
 
@@ -62,9 +102,9 @@ Notes:
 | Paginate voices | `vidmuse voice list --limit 20 --offset 0` |
 
 Notes:
-- `voiceId` is the canonical library ID, for example `F-EN-001`.
-- For TTS calls that need a provider-specific ID, use `modelIds[<model-name>]`, for example `modelIds["minimax/speech-2.6-hd"]`.
-- For clone-capable voice models, use `sampleAudioUrl` as the reference audio when the model contract accepts reference audio.
+- `voiceId` is the canonical voice-library ID, such as `F-EN-001`.
+- When a TTS request requires a provider-specific ID, use `modelIds[<model-name>]`, such as `modelIds["minimax/speech-2.6-hd"]`.
+- For voice models that support cloning, use `sampleAudioUrl` as the reference audio when the model contract accepts reference audio.
 
 ## Assets
 
@@ -80,16 +120,17 @@ Notes:
 | Get generation params for an asset | `vidmuse asset generation-params --thread <threadId> --file-path <path>` |
 
 Notes:
-- File type flags: `--image`, `--video`, `--music`.
-- Source flags: `--uploaded`, `--generated`.
+- File-type flags: `--image`, `--video`, and `--music`.
+- Source flags: `--uploaded` and `--generated`.
 - Favorite filter: `--favorite[=true|false]`.
-- `--all-threads` cannot be combined with `--thread`.
+- `--all-threads` cannot be used with `--thread`.
 - `generation-params` requires both `--thread` and `--file-path`.
 
 ## Threads And Messages
 
 | Task | Command |
 |---|---|
+| Create a free canvas | `vidmuse thread create --canvas` |
 | Create a thread | `vidmuse thread create --text "Create a video"` |
 | Create with options | `vidmuse thread create --text "Create a video" --aspect-ratio 16:9 --resolution 720p --file ./input.png` |
 | List threads | `vidmuse thread list --limit 20 --offset 0` |
@@ -101,10 +142,11 @@ Notes:
 | Send with mentions | `vidmuse message send --thread <threadId> --text "Use @{style}" --mentions '{"style":{"displayName":"Style"}}'` |
 
 Notes:
-- `thread create` and `message send` accept repeated `--file` and `--file-url`.
-- `thread create --options` accepts JSON merged with explicit option flags.
-- `--default-model key=value` can be repeated for frontend-aligned default model options.
-- `message list`, `message send`, and `thread status` use the configured default thread when no thread ID is passed.
+- `thread create` and `message send` support repeated `--file` and `--file-url` flags.
+- `thread create --canvas` creates an empty free canvas using the `adventurer` thread type.
+- `thread create --options` accepts JSON and merges it with explicitly provided option flags.
+- `--default-model key=value` is repeatable and supplies default model options consistent with the frontend.
+- When no thread ID is provided, `message list`, `message send`, and `thread status` use the configured default thread.
 
 ## Memory
 
