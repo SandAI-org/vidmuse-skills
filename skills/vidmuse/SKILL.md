@@ -1,6 +1,6 @@
 ---
 name: vidmuse
-description: Use when an AI agent needs to work with VidMuse projects, account state, subscription credits, video/audio/image/text/tool models, generated or uploaded assets, style library entries, voice library entries, generation parameters, threads, messages, or long-term memory. Installs and uses the `vidmuse` command runtime when needed.
+description: Use when an AI agent needs to work with VidMuse projects, account state, subscription credits, video/audio/image/text/tool models, generated or uploaded assets, style library entries, voice library entries, generation parameters, threads, messages, or long-term memory. Installs and uses the `vidmuse` command runtime when needed. Message lookup supports optional context (default 0; integer 0-50 messages per side).
 ---
 
 # VidMuse Skill
@@ -42,6 +42,27 @@ Use this skill when a task asks for VidMuse account state, subscription plan, mo
    ```
 
 2. Authenticate when needed.
+
+   `mg style list` uses the same online authentication and API configuration as
+   other business commands. From CLI 0.9.10, local CLI → Zeus gateway → Asset; Runner CLI → APIG → Asset (via localhost:8080 Sidecar), using `GET /asset-meta/api/v1/mg-styles?includeReferencePath=true`. CLI needs no NAS mount.
+   Select an entry by `thread_id` and keep the selection in normal conversation
+   memory; metadata `style_id` is display-only. Its `reference_path` is readable
+   only inside an environment with the matching platform NAS mount.
+   The list exposes the administrator-entered finished-video `video_url`, which must be
+   directly accessible over the public internet without login. It is separate from
+   the local NAS `reference_path`; missing or blank values in this optional string
+   field return `""` for compatibility with old metadata. The CLI only displays the
+   URL and does not probe accessibility, automatically play or download the video,
+   or select a final version.
+   It also returns `tag_list` (objects with stable `tag_id` and localized `name`, default `[]`; each server-side tag preserves its ID and language map, and missing translations fall back to `en`), `estimated_credits_range`
+   (`{min:number,max:number}` with both finite nonnegative bounds, min ≤ max, and no
+   fractional-digit limit; `null` means unknown and `{min:0,max:0}` means a known zero
+   estimate), and the public-image `cover_url` (default `""`).
+   All three remain available in JSON, text, and table output; estimates are
+   catalog metadata and listing does not deduct credits. Asset converts a legacy scalar
+   estimate to an equal-bound range only when the range field is absent; all CLI
+   formats output the range and omit the legacy scalar.
+   See `references/command-map.md` for the reference selection contract.
 
    First check whether the current session is already authenticated:
 

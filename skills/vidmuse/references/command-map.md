@@ -28,7 +28,8 @@ The server listens on `127.0.0.1` by default. A non-loopback `--host` is an expl
 | Task | Command |
 |---|---|
 | Get current profile | `vidmuse profile get` |
-| Get subscription plan and credits | `vidmuse plan get` |
+| Get subscription plans (code, name, interval) | `vidmuse plan get` |
+| Get available credits (`availableCredits`) | `vidmuse credits get` |
 | Interactive browser login | `vidmuse login` |
 | Headless/device login | `vidmuse login --device` |
 | Start non-blocking device login | `vidmuse login --device --start` |
@@ -71,6 +72,36 @@ Notes:
 - By default, `model run` waits for cli-server to receive the terminal Aion result. With `--async`, supported media models print only the task ID; `model result <taskId>` performs one task query and prints the result after the task succeeds. It does not wait in cli-server, so retry it later while the task is still in progress. Text models do not support `--async`.
 - The CLI does not expose generic tool models or general-purpose text models. `analyze_music` is the only dedicated tool command and does not require a thread.
 - `analyze_music` accepts a local audio/video path or public HTTP(S) URL. Public media is downloaded to a temporary CLI file, uploaded through the model input flow, and forwarded to VidMCP as the returned `savedPath`.
+
+## Motion graphics references
+
+| Command | Purpose |
+|---|---|
+| `vidmuse mg style list --language zh -o json` | Query published official references with `thread_id`, display `style_id`, name, description, `video_url`, `tag_list`, nullable `estimated_credits_range` (`{min,max}`), `cover_url` and the read-only `reference_path` |
+
+This command uses the same authentication and API configuration as `model`:
+From CLI 0.9.10: local CLI → Zeus gateway → Asset; Runner CLI → APIG → Asset (via localhost:8080 Sidecar), using `/asset-meta/api/v1/mg-styles?includeReferencePath=true`. Asset reads NAS; CLI needs no NAS mount or runtime-root configuration. Select an entry by `thread_id`; `style_id` is display metadata only.
+`reference_path` is a platform NAS path. Only an Agent with the matching mount can
+read its assets; local users can query metadata and view the public `video_url`.
+The CLI does not expose directory browsing or downloads.
+
+`list` returns metadata and `reference_path`, including `video_url`, an
+administrator-entered finished-video URL from the optional `meta.json` string
+field, in JSON, text, and table output. It must be directly accessible over the
+public internet without login and is separate from the local NAS
+`reference_path`. Whitespace is trimmed; missing or blank values return `""` for
+compatibility with old entries. The CLI only displays the URL; it does not probe
+accessibility, automatically play or download the video, select a final version,
+or read local NAS files.
+
+Keep the selected list entry in your normal conversation memory and follow the
+latest selection in subsequent generation. Remember its Thread ID, style ID,
+localized name and description, `video_url`, and `reference_path`. Selecting or
+switching a reference needs no additional CLI command.
+The command requires no `WORKING_DIR`, reads or writes no project selection state,
+and calls no memory API. Existing selection files are ignored and left untouched.
+Adapt the project content yourself and copy only individual files that need
+edits. Public assets stay read-only.
 
 ## Styles
 
@@ -124,7 +155,7 @@ Notes:
 - Source flags: `--uploaded` and `--generated`.
 - Favorite filter: `--favorite[=true|false]`.
 - `--all-threads` cannot be used with `--thread`.
-- `generation-params` requires both `--thread` and `--file-path`.
+- `generation-params` requires both `--thread` and `--file-path`. Use the exact stored path from `asset list`; the file need not exist locally. It queries Asset Meta and includes `_metadata` in the result.
 
 ## Threads And Messages
 
@@ -136,6 +167,8 @@ Notes:
 | List threads | `vidmuse thread list --limit 20 --offset 0` |
 | Get thread status | `vidmuse thread status <threadId>` |
 | Save default thread | `vidmuse thread use <threadId>` |
+| Read one Manager message | `vidmuse message get <messageId> --thread <managerThreadId> -o json` |
+| Read surrounding Manager messages | `vidmuse message get <messageId> --thread <managerThreadId> --context 2 -o json` |
 | List messages | `vidmuse message list --thread <threadId> --limit 50` |
 | List latest messages | `vidmuse message list --thread <threadId> --last 5` |
 | Send message | `vidmuse message send --thread <threadId> --text "Make it shorter"` |
@@ -146,6 +179,7 @@ Notes:
 - `thread create --canvas` creates an empty free canvas using the `adventurer` thread type.
 - `thread create --options` accepts JSON and merges it with explicitly provided option flags.
 - `--default-model key=value` is repeatable and supplies default model options consistent with the frontend.
+- `message get` takes a Manager/Aion thread ID, defaults only to `AGENT_THREAD_ID`, and never uses the saved Zeus default. `--context N` is optional, defaults to 0, and accepts integers from 0 to 50 inclusive. Omitted or zero returns only the target message. A positive N returns up to N visible messages before and up to N after the target, in chronological order. Manager enforces ownership and Runner thread scope. It uses service routing: local `/gateway/manager`, Runner Sidecar `/manager`.
 - When no thread ID is provided, `message list`, `message send`, and `thread status` use the configured default thread.
 
 ## Memory
