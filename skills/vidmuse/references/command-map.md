@@ -30,6 +30,7 @@ The server listens on `127.0.0.1` by default. A non-loopback `--host` is an expl
 | Get current profile | `vidmuse profile get` |
 | Get subscription plans (code, name, interval) | `vidmuse plan get` |
 | Get available credits (`availableCredits`) | `vidmuse credits get` |
+| Get a Thread's credit usage summary | `vidmuse credits thread <threadId> -o json` |
 | Interactive browser login | `vidmuse login` |
 | Headless/device login | `vidmuse login --device` |
 | Start non-blocking device login | `vidmuse login --device --start` |
